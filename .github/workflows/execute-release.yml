@@ -128,9 +128,10 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
+          set -o pipefail
           mkdir -p releases
-          npx @vscode/vsce package --no-dependencies --out "releases/cursor-remote-${VERSION}.vsix"
-          npx tsx scripts/verify-vsix.ts "releases/cursor-remote-${VERSION}.vsix"
+          npx @vscode/vsce package --no-dependencies --out "releases/cursor-remote-${VERSION}.vsix" 2>&1 | tee package.log
+          npx tsx scripts/verify-vsix.ts "releases/cursor-remote-${VERSION}.vsix" 2>&1 | tee verify.log
           (cd releases && sha256sum "cursor-remote-${VERSION}.vsix" > "cursor-remote-${VERSION}.vsix.sha256")
 
       - name: Push release commit and tag
@@ -181,12 +182,13 @@ jobs:
             --verify-tag \
             --latest
 
-      - name: Upload workflow artifact
-        if: steps.guard.outputs.skip != 'true'
+      - name: Upload release files and diagnostics
+        if: always() && steps.guard.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: cursor-remote-v${{ steps.version.outputs.version }}
+          name: cursor-remote-v${{ steps.version.outputs.version }}-diagnostics
           path: |
-            releases/cursor-remote-${{ steps.version.outputs.version }}.vsix
-            releases/cursor-remote-${{ steps.version.outputs.version }}.vsix.sha256
+            releases/
+            package.log
+            verify.log
           if-no-files-found: error
