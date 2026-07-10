@@ -7,7 +7,10 @@ import { ServerManager } from './server-manager.js';
 import { LicenseManager } from './license-manager.js';
 import { StatusTreeView } from './tree-view.js';
 import { SetupPanel } from './setup-panel.js';
-import { TELEGRAM_BOT_TOKEN_SECRET_KEY } from './secrets.js';
+import {
+  DISCORD_BOT_TOKEN_SECRET_KEY,
+  TELEGRAM_BOT_TOKEN_SECRET_KEY,
+} from './secrets.js';
 
 let serverManager: ServerManager | undefined;
 
@@ -33,25 +36,28 @@ async function ensurePassword(): Promise<void> {
   });
 }
 
-async function migrateTelegramBotToken(
+async function migrateBotToken(
   context: vscode.ExtensionContext,
-  outputChannel: UnifiedOutputChannel
+  outputChannel: UnifiedOutputChannel,
+  settingName: string,
+  secretKey: string,
+  transportName: string
 ): Promise<void> {
   const config = vscode.workspace.getConfiguration('cursorRemote');
-  const legacy = config.get<string>('telegram.botToken', '');
+  const legacy = config.get<string>(settingName, '');
   if (!legacy.trim()) return;
 
   try {
-    await context.secrets.store(TELEGRAM_BOT_TOKEN_SECRET_KEY, legacy);
-    const stored = await context.secrets.get(TELEGRAM_BOT_TOKEN_SECRET_KEY);
+    await context.secrets.store(secretKey, legacy);
+    const stored = await context.secrets.get(secretKey);
     if (stored === legacy) {
-      await config.update('telegram.botToken', undefined, vscode.ConfigurationTarget.Global);
+      await config.update(settingName, undefined, vscode.ConfigurationTarget.Global);
       vscode.window.showInformationMessage(
-        'CursorRemote: your Telegram bot token was moved to secure storage.'
+        `CursorRemote: your ${transportName} bot token was moved to secure storage.`
       );
     }
   } catch (err) {
-    outputChannel.warn(`Telegram bot token migration failed: ${err instanceof Error ? err.message : err}`);
+    outputChannel.warn(`${transportName} bot token migration failed: ${err instanceof Error ? err.message : err}`);
   }
 }
 
@@ -66,7 +72,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }
   });
 
-  await migrateTelegramBotToken(context, outputChannel);
+  await migrateBotToken(
+    context,
+    outputChannel,
+    'telegram.botToken',
+    TELEGRAM_BOT_TOKEN_SECRET_KEY,
+    'Telegram'
+  );
+  await migrateBotToken(
+    context,
+    outputChannel,
+    'discord.botToken',
+    DISCORD_BOT_TOKEN_SECRET_KEY,
+    'Discord'
+  );
 
   serverManager = new ServerManager(
     context,
