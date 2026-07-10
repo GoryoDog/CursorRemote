@@ -1,12 +1,12 @@
 {
   "name": "cursor-remote",
   "displayName": "CursorRemote",
-  "version": "0.1.50",
+  "version": "0.2.0",
   "description": "Remote control your local Cursor AI agent — monitor, approve, and send tasks from your phone, Telegram, or Discord.",
   "publisher": "cursor-remote",
   "repository": {
     "type": "git",
-    "url": "https://github.com/len5ky/CursorRemote"
+    "url": "https://github.com/GoryoDog/CursorRemote"
   },
   "type": "module",
   "main": "./dist/extension.cjs",
@@ -74,7 +74,7 @@
         "cursorRemote.cdpUrl": {
           "type": "string",
           "default": "http://127.0.0.1:9222",
-          "markdownDescription": "Cursor's Chrome DevTools Protocol endpoint URL. Launch Cursor with `--remote-debugging-port=9222` to enable. See the [setup guide](https://github.com/len5ky/CursorRemote/blob/main/docs/setup-guide.md) for details."
+          "markdownDescription": "Cursor's Chrome DevTools Protocol endpoint URL. Launch Cursor with `--remote-debugging-port=9222` to enable. See the [setup guide](https://github.com/GoryoDog/CursorRemote/blob/main/docs/setup-guide.md) for details."
         },
         "cursorRemote.serverPort": {
           "type": "number",
@@ -84,7 +84,7 @@
         "cursorRemote.serverHost": {
           "type": "string",
           "default": "127.0.0.1",
-          "markdownDescription": "Bind address for the web client server. Default `127.0.0.1` only allows local access. Set to `0.0.0.0` for LAN/phone access (requires a password). For secure remote access, consider [Tailscale](https://github.com/len5ky/CursorRemote/blob/main/docs/tailscale-setup.md)."
+          "markdownDescription": "Bind address for the web client server. Default `127.0.0.1` only allows local access. Set to `0.0.0.0` for LAN/phone access (requires a password). For secure remote access, consider [Tailscale](https://github.com/GoryoDog/CursorRemote/blob/main/docs/tailscale-setup.md)."
         },
         "cursorRemote.pollIntervalMs": {
           "type": "number",
@@ -110,7 +110,7 @@
         "cursorRemote.webappPassword": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Password to protect the web client. A random password is **auto-generated** on first install. See the [security section](https://github.com/len5ky/CursorRemote#security) for best practices."
+          "markdownDescription": "Password to protect the web client. A random password is **auto-generated** on first install. See the [security section](https://github.com/GoryoDog/CursorRemote#security) for best practices."
         },
         "cursorRemote.windowTitleQualifier": {
           "type": "boolean",
@@ -120,7 +120,7 @@
         "cursorRemote.telegram.enabled": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Enable the Telegram bot transport. See the [Telegram setup guide](https://github.com/len5ky/CursorRemote#telegram-setup) for step-by-step instructions."
+          "markdownDescription": "Enable the Telegram bot transport. See the [Telegram setup guide](https://github.com/GoryoDog/CursorRemote#telegram-setup) for step-by-step instructions."
         },
         "cursorRemote.telegram.botToken": {
           "type": "string",
@@ -130,7 +130,7 @@
         "cursorRemote.telegram.allowedUsers": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Comma-separated Telegram user IDs allowed to use the bot. See the [Telegram setup guide](https://github.com/len5ky/CursorRemote#telegram-setup)."
+          "markdownDescription": "Comma-separated Telegram user IDs allowed to use the bot. See the [Telegram setup guide](https://github.com/GoryoDog/CursorRemote#telegram-setup)."
         },
         "cursorRemote.telegram.impl": {
           "type": "string",
@@ -144,7 +144,7 @@
         "cursorRemote.discord.enabled": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Enable the Discord Bot API transport. See [Discord setup](https://github.com/GoryoDog/CursorRemote/blob/feature/discord-bot-transport/docs/discord-setup.md)."
+          "markdownDescription": "Enable the Discord Bot API transport. See [Discord setup](https://github.com/GoryoDog/CursorRemote/blob/main/docs/discord-setup.md)."
         },
         "cursorRemote.discord.botToken": {
           "type": "string",

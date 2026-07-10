@@ -58,11 +58,11 @@ Remote control for your local Cursor AI agent — monitor sessions, approve step
 
 ### 1. Install the Extension
 
-Download the latest `.vsix` from [releases](https://github.com/len5ky/CursorRemote/releases), then install:
+Download the latest `.vsix` from [releases](https://github.com/GoryoDog/CursorRemote/releases), then install:
 
 ```bash
 # From the command line
-cursor --install-extension cursor-remote-0.1.50.vsix
+cursor --install-extension cursor-remote-0.2.0.vsix
 ```
 
 Or in Cursor: open the Command Palette (`Ctrl+Shift+P`), run **Extensions: Install from VSIX...**, and select the file.
@@ -165,7 +165,7 @@ Run the relay server directly from the command line — useful for headless mach
 ### Install and Run
 
 ```bash
-git clone https://github.com/len5ky/CursorRemote.git cursor-ide-remote
+git clone https://github.com/GoryoDog/CursorRemote.git cursor-ide-remote
 cd cursor-ide-remote
 npm install
 cp .env.example .env

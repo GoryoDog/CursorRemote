@@ -6,6 +6,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-10
+
+### Added
+- Discord Bot API transport with guild-scoped slash commands.
+- Discord approval/rejection buttons and optional Cursor response notifications.
+- Explicit Discord guild, channel, and user allowlist authorization.
+- Automated CI validation and verified VSIX release packaging.
+
+
 ## [0.1.50] - 2026-07-08
 
 ### Fixed
