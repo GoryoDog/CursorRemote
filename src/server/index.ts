@@ -10,6 +10,7 @@ import { Relay } from './relay.js';
 import type { Transport } from './transports/types.js';
 import { TelegramTransport } from './transports/telegram/index.js';
 import { RawTelegramTransport } from './transports/telegram-raw/index.js';
+import { DiscordTransport } from './transports/discord/index.js';
 
 const logStream = createWriteStream('./temp/server.log', { flags: 'a' });
 const origLog = console.log;
@@ -79,6 +80,7 @@ async function main(): Promise<void> {
   console.log(`[main] Poll interval: ${config.pollIntervalMs}ms`);
   console.log(`[main] Debounce: ${config.debounceMs}ms`);
   console.log(`[main] Telegram: ${config.telegram.enabled ? 'enabled' : 'disabled'}`);
+  console.log(`[main] Discord: ${config.discord.enabled ? 'enabled' : 'disabled'}`);
   console.log();
 
   const stateManager = new StateManager(config.debounceMs);
@@ -150,6 +152,20 @@ async function main(): Promise<void> {
       console.error(`[telegram] Failed to start: ${err instanceof Error ? err.message : String(err)}`);
     });
     transports.push(telegram);
+  }
+
+  if (config.discord.enabled && config.discord.botToken) {
+    const discord = new DiscordTransport(
+      config.discord,
+      windowMonitor,
+      stateManager,
+      commandExecutor,
+      cdpBridge
+    );
+    discord.start().catch(err => {
+      console.error(`[discord] Failed to start: ${err instanceof Error ? err.message : String(err)}`);
+    });
+    transports.push(discord);
   }
 
   windowMonitor.start();
