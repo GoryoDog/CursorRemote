@@ -59,57 +59,53 @@ jobs:
         if: steps.guard.outputs.skip != 'true'
         id: version
         run: |
-          CURRENT_VERSION="$(node -p "require('./package.json').version")"
+          node <<'NODE'
+          const fs = require('fs');
+          const targetVersion = '0.2.0';
 
-          if [ "$CURRENT_VERSION" = "0.1.50" ]; then
-            node <<'NODE'
-            const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          if (!['0.1.50', targetVersion].includes(pkg.version)) {
+            throw new Error(`Expected package version 0.1.50 or ${targetVersion}, got ${pkg.version}`);
+          }
+          pkg.version = targetVersion;
+          pkg.repository = { type: 'git', url: 'https://github.com/GoryoDog/CursorRemote' };
+          let packageText = JSON.stringify(pkg, null, 2) + '\n';
+          packageText = packageText
+            .replaceAll('https://github.com/len5ky/CursorRemote', 'https://github.com/GoryoDog/CursorRemote')
+            .replaceAll('/blob/feature/discord-bot-transport/', '/blob/main/');
+          fs.writeFileSync('package.json', packageText);
 
-            const packagePath = 'package.json';
-            const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-            pkg.repository = { type: 'git', url: 'https://github.com/GoryoDog/CursorRemote' };
-            let packageText = JSON.stringify(pkg, null, 2) + '\n';
-            packageText = packageText
+          const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+          lock.version = targetVersion;
+          if (lock.packages && lock.packages['']) lock.packages[''].version = targetVersion;
+          fs.writeFileSync('package-lock.json', JSON.stringify(lock, null, 2) + '\n');
+
+          for (const path of ['README.md', 'docs/setup-guide.md']) {
+            let text = fs.readFileSync(path, 'utf8');
+            text = text
               .replaceAll('https://github.com/len5ky/CursorRemote', 'https://github.com/GoryoDog/CursorRemote')
-              .replaceAll('/blob/feature/discord-bot-transport/', '/blob/main/');
-            fs.writeFileSync(packagePath, packageText);
+              .replace(/cursor-remote-\d+\.\d+\.\d+\.vsix/g, `cursor-remote-${targetVersion}.vsix`);
+            fs.writeFileSync(path, text);
+          }
 
-            for (const path of ['README.md', 'docs/setup-guide.md']) {
-              let text = fs.readFileSync(path, 'utf8');
-              text = text.replaceAll('https://github.com/len5ky/CursorRemote', 'https://github.com/GoryoDog/CursorRemote');
-              fs.writeFileSync(path, text);
+          let changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+          if (!changelog.includes(`## [${targetVersion}]`)) {
+            const section = `## [Unreleased]\n\n## [${targetVersion}] - 2026-07-10\n\n### Added\n- Discord Bot API transport with guild-scoped slash commands.\n- Discord approval/rejection buttons and optional Cursor response notifications.\n- Explicit Discord guild, channel, and user allowlist authorization.\n- Automated CI validation and verified VSIX release packaging.\n`;
+            if (!changelog.includes('## [Unreleased]')) {
+              throw new Error('CHANGELOG.md does not contain the Unreleased heading');
             }
-            NODE
+            changelog = changelog.replace('## [Unreleased]', section);
+            fs.writeFileSync('CHANGELOG.md', changelog);
+          }
+          NODE
 
-            npm run release -- minor
-            git tag -d v0.2.0
-
-            node <<'NODE'
-            const fs = require('fs');
-            const version = require('./package.json').version;
-            const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
-            lock.version = version;
-            if (lock.packages && lock.packages['']) lock.packages[''].version = version;
-            fs.writeFileSync('package-lock.json', JSON.stringify(lock, null, 2) + '\n');
-            NODE
-
-            git add package-lock.json
-            git commit --amend --no-edit
-          elif [ "$CURRENT_VERSION" = "0.2.0" ]; then
-            echo "Release commit already exists; recreating only the missing tag/release."
-          else
-            echo "Expected package version 0.1.50 or 0.2.0, got $CURRENT_VERSION" >&2
-            exit 1
+          git add package.json package-lock.json CHANGELOG.md README.md docs/setup-guide.md
+          if ! git diff --cached --quiet; then
+            git commit -m "release: v0.2.0"
           fi
 
-          VERSION="$(node -p "require('./package.json').version")"
-          if [ "$VERSION" != "0.2.0" ]; then
-            echo "Expected final version 0.2.0, got $VERSION" >&2
-            exit 1
-          fi
-
-          git tag -a "v${VERSION}" -m "CursorRemote v${VERSION}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          git tag -a v0.2.0 -m "CursorRemote v0.2.0"
+          echo "version=0.2.0" >> "$GITHUB_OUTPUT"
 
       - name: Reinstall from synchronized lockfile
         if: steps.guard.outputs.skip != 'true'
