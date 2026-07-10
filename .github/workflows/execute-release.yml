@@ -1,0 +1,196 @@
+name: Execute v0.2.0 Release
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/execute-release.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-v0.2.0
+  cancel-in-progress: true
+
+jobs:
+  release:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Check whether v0.2.0 already exists
+        id: guard
+        run: |
+          git fetch origin main --tags
+          if git rev-parse -q --verify refs/tags/v0.2.0 >/dev/null; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "v0.2.0 already exists; nothing to publish."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node.js
+        if: steps.guard.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.guard.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Configure release identity
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Prepare v0.2.0 release commit and tag
+        if: steps.guard.outputs.skip != 'true'
+        id: version
+        run: |
+          CURRENT_VERSION="$(node -p "require('./package.json').version")"
+
+          if [ "$CURRENT_VERSION" = "0.1.50" ]; then
+            node <<'NODE'
+            const fs = require('fs');
+
+            const packagePath = 'package.json';
+            const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+            pkg.repository = { type: 'git', url: 'https://github.com/GoryoDog/CursorRemote' };
+            let packageText = JSON.stringify(pkg, null, 2) + '\n';
+            packageText = packageText
+              .replaceAll('https://github.com/len5ky/CursorRemote', 'https://github.com/GoryoDog/CursorRemote')
+              .replaceAll('/blob/feature/discord-bot-transport/', '/blob/main/');
+            fs.writeFileSync(packagePath, packageText);
+
+            for (const path of ['README.md', 'docs/setup-guide.md']) {
+              let text = fs.readFileSync(path, 'utf8');
+              text = text.replaceAll('https://github.com/len5ky/CursorRemote', 'https://github.com/GoryoDog/CursorRemote');
+              fs.writeFileSync(path, text);
+            }
+            NODE
+
+            npm run release -- minor
+            git tag -d v0.2.0
+
+            node <<'NODE'
+            const fs = require('fs');
+            const version = require('./package.json').version;
+            const lock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+            lock.version = version;
+            if (lock.packages && lock.packages['']) lock.packages[''].version = version;
+            fs.writeFileSync('package-lock.json', JSON.stringify(lock, null, 2) + '\n');
+            NODE
+
+            git add package-lock.json
+            git commit --amend --no-edit
+          elif [ "$CURRENT_VERSION" = "0.2.0" ]; then
+            echo "Release commit already exists; recreating only the missing tag/release."
+          else
+            echo "Expected package version 0.1.50 or 0.2.0, got $CURRENT_VERSION" >&2
+            exit 1
+          fi
+
+          VERSION="$(node -p "require('./package.json').version")"
+          if [ "$VERSION" != "0.2.0" ]; then
+            echo "Expected final version 0.2.0, got $VERSION" >&2
+            exit 1
+          fi
+
+          git tag -a "v${VERSION}" -m "CursorRemote v${VERSION}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Reinstall from synchronized lockfile
+        if: steps.guard.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Run tests
+        if: steps.guard.outputs.skip != 'true'
+        run: npm test
+
+      - name: Build server and web client
+        if: steps.guard.outputs.skip != 'true'
+        run: npm run build
+
+      - name: Bundle Cursor extension
+        if: steps.guard.outputs.skip != 'true'
+        run: npm run build:ext
+
+      - name: Package and verify VSIX
+        if: steps.guard.outputs.skip != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p releases
+          npx @vscode/vsce package --no-dependencies --out "releases/cursor-remote-${VERSION}.vsix"
+          npx tsx scripts/verify-vsix.ts "releases/cursor-remote-${VERSION}.vsix"
+          (cd releases && sha256sum "cursor-remote-${VERSION}.vsix" > "cursor-remote-${VERSION}.vsix.sha256")
+
+      - name: Push release commit and tag
+        if: steps.guard.outputs.skip != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            git push origin HEAD:main
+          fi
+          git push origin "v${VERSION}"
+
+      - name: Create GitHub Release
+        if: steps.guard.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          cat > RELEASE_NOTES.md <<EOF
+          ## CursorRemote v${VERSION}
+
+          This release adds Discord Bot API control alongside the existing web and Telegram transports.
+
+          ### Discord integration
+          - Guild-scoped `/cursor` slash commands
+          - Send prompts and inspect Cursor state
+          - Approve, reject, or accept all pending actions
+          - Switch mode, model, chat tab, and Cursor window
+          - Optional assistant-response and approval-card notifications
+          - Explicit guild, channel, and user-ID authorization
+          - No Message Content privileged intent required
+
+          ### Validation
+          - Node.js 20 CI
+          - Unit tests
+          - TypeScript/server build
+          - Cursor extension bundle
+          - VSIX content allowlist verification
+          - SHA-256 checksum asset
+          EOF
+
+          gh release create "v${VERSION}" \
+            "releases/cursor-remote-${VERSION}.vsix" \
+            "releases/cursor-remote-${VERSION}.vsix.sha256" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "CursorRemote v${VERSION}" \
+            --notes-file RELEASE_NOTES.md \
+            --verify-tag \
+            --latest
+
+      - name: Upload workflow artifact
+        if: steps.guard.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cursor-remote-v${{ steps.version.outputs.version }}
+          path: |
+            releases/cursor-remote-${{ steps.version.outputs.version }}.vsix
+            releases/cursor-remote-${{ steps.version.outputs.version }}.vsix.sha256
+          if-no-files-found: error
