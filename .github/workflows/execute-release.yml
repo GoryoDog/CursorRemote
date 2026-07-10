@@ -130,8 +130,8 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p releases
-          npx @vscode/vsce package --no-dependencies --out "releases/cursor-remote-${VERSION}.vsix" 2>&1 | tee package.log
-          npx tsx scripts/verify-vsix.ts "releases/cursor-remote-${VERSION}.vsix" 2>&1 | tee verify.log
+          npx @vscode/vsce package --no-dependencies --out "releases/cursor-remote-${VERSION}.vsix" 2>&1 | tee /tmp/package.log
+          npx tsx scripts/verify-vsix.ts "releases/cursor-remote-${VERSION}.vsix" 2>&1 | tee /tmp/verify.log
           (cd releases && sha256sum "cursor-remote-${VERSION}.vsix" > "cursor-remote-${VERSION}.vsix.sha256")
 
       - name: Push release commit and tag
@@ -189,6 +189,6 @@ jobs:
           name: cursor-remote-v${{ steps.version.outputs.version }}-diagnostics
           path: |
             releases/
-            package.log
-            verify.log
+            /tmp/package.log
+            /tmp/verify.log
           if-no-files-found: error
