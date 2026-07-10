@@ -2,7 +2,7 @@
   "name": "cursor-remote",
   "displayName": "CursorRemote",
   "version": "0.1.50",
-  "description": "Remote control your local Cursor AI agent — monitor, approve, and send tasks from your phone or Telegram.",
+  "description": "Remote control your local Cursor AI agent — monitor, approve, and send tasks from your phone, Telegram, or Discord.",
   "publisher": "cursor-remote",
   "repository": {
     "type": "git",
@@ -94,7 +94,7 @@
         "cursorRemote.debounceMs": {
           "type": "number",
           "default": 300,
-          "markdownDescription": "State broadcast debounce in milliseconds."
+          "markdownDescription": "State broadcast interval in milliseconds."
         },
         "cursorRemote.logLevel": {
           "type": "string",
@@ -140,6 +140,36 @@
             "raw"
           ],
           "markdownDescription": "Telegram transport implementation. Use `grammy` (default) for the Grammy framework, or `raw` for a lightweight fetch-based transport if Grammy hangs on startup."
+        },
+        "cursorRemote.discord.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Enable the Discord Bot API transport. See [Discord setup](https://github.com/GoryoDog/CursorRemote/blob/feature/discord-bot-transport/docs/discord-setup.md)."
+        },
+        "cursorRemote.discord.botToken": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Enter the Discord bot token once. On the next activation it is moved to VS Code's encrypted SecretStorage and this setting is cleared."
+        },
+        "cursorRemote.discord.guildId": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Discord server (guild) ID where the `/cursor` command is registered."
+        },
+        "cursorRemote.discord.channelId": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Discord channel ID allowed to invoke commands and receive Cursor notifications."
+        },
+        "cursorRemote.discord.allowedUsers": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Required comma-separated Discord user IDs allowed to operate CursorRemote. Snowflakes are kept as strings to avoid numeric precision loss."
+        },
+        "cursorRemote.discord.notify": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Mirror new Cursor assistant messages, approval prompts, and connection changes to the configured Discord channel."
         }
       }
     },
@@ -164,7 +194,7 @@
       {
         "id": "cursorRemote.gettingStarted",
         "title": "Get Started with CursorRemote",
-        "description": "Monitor sessions, approve steps, and send tasks from your phone or Telegram.",
+        "description": "Monitor sessions, approve steps, and send tasks from your phone, Telegram, or Discord.",
         "steps": [
           {
             "id": "cursorRemote.walkthrough.license",

@@ -347,6 +347,7 @@ export interface ServerConfig {
   windowTitleQualifier: boolean;
   dataDir: string;
   telegram: TelegramConfig;
+  discord: DiscordConfig;
 }
 
 export interface TelegramConfig {
@@ -354,4 +355,13 @@ export interface TelegramConfig {
   botToken: string;
   preRegisteredUsers: number[];
   impl: 'grammy' | 'raw';
+}
+
+export interface DiscordConfig {
+  enabled: boolean;
+  botToken: string;
+  guildId: string;
+  channelId: string;
+  allowedUsers: string[];
+  notify: boolean;
 }

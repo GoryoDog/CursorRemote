@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
-import { TELEGRAM_BOT_TOKEN_SECRET_KEY } from './secrets.js';
+import {
+  DISCORD_BOT_TOKEN_SECRET_KEY,
+  TELEGRAM_BOT_TOKEN_SECRET_KEY,
+} from './secrets.js';
 
 export async function buildEnvFromConfig(
   context: vscode.ExtensionContext,
@@ -8,6 +11,9 @@ export async function buildEnvFromConfig(
   const config = vscode.workspace.getConfiguration('cursorRemote');
   const telegramBotToken = (await context.secrets.get(TELEGRAM_BOT_TOKEN_SECRET_KEY))
     ?? config.get<string>('telegram.botToken', '');
+  const discordBotToken = (await context.secrets.get(DISCORD_BOT_TOKEN_SECRET_KEY))
+    ?? config.get<string>('discord.botToken', '');
+
   return {
     CDP_URL: config.get<string>('cdpUrl', 'http://127.0.0.1:9222'),
     SERVER_PORT: String(config.get<number>('serverPort', 3000)),
@@ -21,6 +27,12 @@ export async function buildEnvFromConfig(
     TELEGRAM_BOT_TOKEN: telegramBotToken,
     TELEGRAM_ALLOWED_USERS: config.get<string>('telegram.allowedUsers', ''),
     TELEGRAM_IMPL: config.get<string>('telegram.impl', 'grammy'),
+    DISCORD_ENABLED: String(config.get<boolean>('discord.enabled', false)),
+    DISCORD_BOT_TOKEN: discordBotToken,
+    DISCORD_GUILD_ID: config.get<string>('discord.guildId', ''),
+    DISCORD_CHANNEL_ID: config.get<string>('discord.channelId', ''),
+    DISCORD_ALLOWED_USERS: config.get<string>('discord.allowedUsers', ''),
+    DISCORD_NOTIFY: String(config.get<boolean>('discord.notify', true)),
     LICENSE_KEY: licenseKey ?? '',
     DATA_DIR: context.globalStorageUri.fsPath,
     LOG_FORMAT: 'json',

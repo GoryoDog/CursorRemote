@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import type { ServerConfig, SelectorConfig } from './types.js';
+import { parseSnowflakeList } from './transports/discord/helpers.js';
 
 export function loadConfig(): ServerConfig {
   const preRegisteredRaw = process.env.TELEGRAM_ALLOWED_USERS ?? '';
@@ -28,6 +29,14 @@ export function loadConfig(): ServerConfig {
       botToken: process.env.TELEGRAM_BOT_TOKEN ?? '',
       preRegisteredUsers,
       impl: (process.env.TELEGRAM_IMPL === 'raw' ? 'raw' : 'grammy') as 'grammy' | 'raw',
+    },
+    discord: {
+      enabled: process.env.DISCORD_ENABLED === 'true',
+      botToken: process.env.DISCORD_BOT_TOKEN ?? '',
+      guildId: process.env.DISCORD_GUILD_ID?.trim() ?? '',
+      channelId: process.env.DISCORD_CHANNEL_ID?.trim() ?? '',
+      allowedUsers: parseSnowflakeList(process.env.DISCORD_ALLOWED_USERS ?? ''),
+      notify: process.env.DISCORD_NOTIFY !== 'false',
     },
   };
 }
