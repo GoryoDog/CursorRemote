@@ -1,6 +1,7 @@
 .vscode/
 .cursor/
 .claude/
+.github/
 tests/
 fixtures/
 node_modules/
@@ -14,6 +15,7 @@ tmp/
 docs/
 data/
 releases/
+*.log
 *.md
 !README.md
 !CHANGELOG.md
